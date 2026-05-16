@@ -35,6 +35,21 @@ for arg in "$@"; do
       fi
       NAME=$( hostname | sed 's/\.local$//' )
       ;;
+    --lan)
+      # IP LAN del Mac (misma WiFi)
+      HOST=$( ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || true )
+      if [ -z "$HOST" ]; then
+        echo "✗ No detecto IP LAN. ¿Estás conectado a WiFi?"
+        exit 1
+      fi
+      if [ -f "$HOME/.beacon/token" ]; then
+        TOKEN=$( cat "$HOME/.beacon/token" )
+      else
+        echo "✗ No encuentro ~/.beacon/token. Arranca el bridge primero."
+        exit 1
+      fi
+      NAME="$( hostname | sed 's/\.local$//' ) (LAN)"
+      ;;
     --host=*) HOST="${arg#--host=}" ;;
     --port=*) PORT="${arg#--port=}" ;;
     --token=*) TOKEN="${arg#--token=}" ;;
