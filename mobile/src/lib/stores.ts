@@ -2,6 +2,13 @@ import { writable, get } from 'svelte/store';
 import type { Device } from './types.ts';
 import { ping } from './api.ts';
 
+declare const __BEACON_DEFAULT__: {
+  host:  string;
+  port:  number;
+  token: string;
+  name:  string;
+};
+
 const STORAGE_KEY_DEVICES = 'beacon.devices.v1';
 const STORAGE_KEY_SETTINGS = 'beacon.settings.v1';
 
@@ -65,6 +72,46 @@ const DEFAULT_SETTINGS: Settings = {
 
 export const settings = writable<Settings>( load_persistent( STORAGE_KEY_SETTINGS, DEFAULT_SETTINGS ) );
 settings.subscribe( ( s ) => save_persistent( STORAGE_KEY_SETTINGS, s ) );
+
+// ─── Default device inyectado en compile time ──────────────────────────────
+/**
+ * Si el APK fue compilado con `BEACON_DEFAULT_HOST` etc. en env, el primer
+ * arranque registra ese device automáticamente. Idempotente: si ya existe
+ * un device con el mismo id (basado en host), no duplica.
+ *
+ * Para activarlo:
+ *   BEACON_DEFAULT_HOST=mac.tail-xxx.ts.net \
+ *   BEACON_DEFAULT_TOKEN=<token> \
+ *   BEACON_DEFAULT_NAME="Mi Mac" \
+ *   bunx tauri android build --apk --target aarch64
+ */
+export function auto_add_default_device(): Device | null {
+  try
+  {
+    const d = ( typeof __BEACON_DEFAULT__ !== 'undefined' ) ? __BEACON_DEFAULT__ : null;
+    if( !d || !d.host || !d.token ) return null;
+
+    const id = 'default-' + d.host.replace( /[^a-z0-9]/gi, '-' ).toLowerCase();
+    const existing = get( devices ).find( x => x.id === id );
+    if( existing ) return existing;
+
+    const device: Device = {
+      id,
+      host:      d.host,
+      port:      d.port || 7890,
+      token:     d.token,
+      name:      d.name || d.host,
+      online:    false,
+      last_seen: Date.now()
+    };
+    add_device( device );
+    return device;
+  }
+  catch
+  {
+    return null;
+  }
+}
 
 // ─── Auto-discovery del bridge local (sólo en dev) ─────────────────────────
 /**

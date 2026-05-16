@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { devices, auto_discover_local_bridge, refresh_devices_status } from '../lib/stores.ts';
+  import { devices, auto_discover_local_bridge, refresh_devices_status, auto_add_default_device } from '../lib/stores.ts';
   import { list_sessions } from '../lib/api.ts';
   import { start_poll } from '../lib/poller.ts';
   import { relative_time, compact_number } from '../lib/format.ts';
@@ -35,7 +35,11 @@
     await refresh();
   }
 
-  onMount( async () => { await rediscover(); stop_poll = start_poll( refresh, 5_000 ); } );
+  onMount( async () => {
+    auto_add_default_device();   // si el APK trae default, registrarlo en el primer arranque
+    await rediscover();
+    stop_poll = start_poll( refresh, 5_000 );
+  } );
   onDestroy( () => stop_poll?.() );
 
   const total_active = $derived(
