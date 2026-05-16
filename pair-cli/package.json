@@ -1,0 +1,17 @@
+{
+  "name": "beacon-pair-cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "pair": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/qrcode-terminal": "^0.12.2",
+    "typescript": "^5.7.0"
+  }
+}

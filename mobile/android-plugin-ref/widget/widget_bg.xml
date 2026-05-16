@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Background drawable del widget. Pega como:
+    src-tauri/gen/android/app/src/main/res/drawable/widget_bg.xml
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#161618"/>
+    <stroke android:width="1dp" android:color="#2A2A2F"/>
+    <corners android:radius="20dp"/>
+</shape>

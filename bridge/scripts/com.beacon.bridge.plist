@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Beacon bridge — launchd autostart al login.
+  Plantilla. install-launchd.sh sustituye __BUN__ y __BRIDGE_DIR__ con los paths reales antes de mover a ~/Library/LaunchAgents/.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.beacon.bridge</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__BUN__</string>
+        <string>run</string>
+        <string>__BRIDGE_DIR__/src/server.ts</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__BRIDGE_DIR__</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>BEACON_PORT</key>
+        <string>7890</string>
+        <key>BEACON_HOST</key>
+        <string>0.0.0.0</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+        <key>Crashed</key>
+        <true/>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>__BRIDGE_DIR__/.logs/bridge.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__BRIDGE_DIR__/.logs/bridge.err.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>

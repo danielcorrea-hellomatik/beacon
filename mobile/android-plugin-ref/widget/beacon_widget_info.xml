@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Metadata del widget Android. Pega como:
+    src-tauri/gen/android/app/src/main/res/xml/beacon_widget_info.xml
+
+  - updatePeriodMillis: mínimo 30min en Android, valores menores se ignoran.
+    Para updates más frecuentes (15min, 5min) hay que usar WorkManager o un
+    PeriodicWorkRequest disparado por el WsService.
+  - resizeMode: el usuario puede redimensionar horizontal+vertical
+  - widgetCategory: keyguard también disponible si quieres mostrarlo en lockscreen
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="80dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/beacon_widget"
+    android:previewLayout="@layout/beacon_widget"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:configure=""/>

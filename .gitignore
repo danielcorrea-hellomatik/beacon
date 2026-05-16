@@ -1,0 +1,44 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+
+# Env / secrets
+.env
+.env.local
+keystore.properties
+*.jks
+*.keystore
+*.p12
+
+# SQLite
+data.db
+data.db-journal
+data.db-shm
+data.db-wal
+
+# Bun
+bun.lockb
+bun.lock
+
+# Rust / Tauri
+target/
+src-tauri/target/
+
+# Android build output (generated)
+src-tauri/gen/android/.gradle/
+src-tauri/gen/android/app/build/
+src-tauri/gen/android/build/
+src-tauri/gen/android/local.properties
+src-tauri/gen/android/.idea/
+src-tauri/gen/android/.cxx/
+src-tauri/gen/android/keystore/
+
+# APKs
+*.apk
+*.aab
+
+# IDE
+.idea/
+.vscode/
+*.swp
