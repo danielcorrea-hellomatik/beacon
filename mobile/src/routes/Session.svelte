@@ -8,7 +8,7 @@
   import { require_biometric } from '../lib/biometric.ts';
   import type { Session as SessionT, SessionEvent } from '../lib/types.ts';
   import StatusIcon from '../lib/components/StatusIcon.svelte';
-  import EventBlock from '../lib/components/EventBlock.svelte';
+  import TerminalLog from '../lib/components/TerminalLog.svelte';
   import Empty from '../lib/components/Empty.svelte';
   import { push } from 'svelte-spa-router';
   import {
@@ -106,33 +106,6 @@
   function jump_to_top()    { timeline_start?.scrollIntoView( { behavior: 'smooth', block: 'start' } ); }
   function jump_to_bottom() { timeline_end?.scrollIntoView( { behavior: 'smooth', block: 'end' } ); stuck_to_bottom = true; }
 
-  function ev_summary( ev: SessionEvent ): string {
-    try
-    {
-      const p = JSON.parse( ev.payload_json ) as Record<string, unknown>;
-      if( ev.type === 'UserPromptSubmit' ) return String( p.prompt ?? '' );
-      if( ev.type === 'PreToolUse' )
-      {
-        const ti = p.tool_input as Record<string, unknown> | undefined;
-        if( ev.tool_name === 'Read' || ev.tool_name === 'Edit' || ev.tool_name === 'Write' )
-          return String( ti?.file_path ?? '' );
-        if( ev.tool_name === 'Bash' )
-          return String( ti?.command ?? '' );
-        if( ev.tool_name === 'Grep' )
-          return String( ti?.pattern ?? '' );
-        return JSON.stringify( ti ?? {} ).slice( 0, 120 );
-      }
-      if( ev.type === 'PostToolUse' )
-      {
-        const out = String( p.tool_output ?? '' );
-        return out.slice( 0, 120 ).replace( /\n+/g, ' ' );
-      }
-      if( ev.type === 'Notification' ) return String( p.message ?? '' );
-      return '';
-    }
-    catch { return ''; }
-  }
-
   async function send( text?: string ) {
     const msg = ( text ?? input ).trim();
     if( !msg || sending || !device ) return;
@@ -171,26 +144,23 @@
 </script>
 
 <header class="sticky top-0 z-10 bg-bg-base/95 backdrop-blur border-b border-bg-line">
-  <div class="px-4 pt-12 pb-3 flex items-center gap-3">
-    <button onclick={() => history.back()} class="text-text-secondary -ml-1 p-1">
+  <div class="px-3 pt-12 pb-2.5 flex items-center gap-2">
+    <button onclick={() => history.back()} class="text-text-secondary p-1 -ml-1">
       <ChevronLeft size={20} strokeWidth={2} />
     </button>
     {#if session}
-      <div class="flex-1 min-w-0">
-        <div class="mono text-[12px] text-accent truncate font-medium">{short_path( session.cwd )}</div>
-        <div class="flex items-center gap-2 text-[10px] text-text-secondary mt-1 mono">
-          <StatusIcon status={session.status} size={11} />
-          <span class="uppercase tracking-wider">{session.status}</span>
-          <span class="text-bg-line">·</span>
-          <span>{session.model || '—'}</span>
-          <span class="text-bg-line">·</span>
-          <span>{compact_number( session.tokens_in + session.tokens_out )} tok</span>
-          <span class="text-bg-line">·</span>
-          <span>{relative_time( session.started_at )}</span>
-        </div>
+      <div class="flex items-center gap-2 text-[10px] mono flex-1 min-w-0">
+        <StatusIcon status={session.status} size={11} />
+        <span class="uppercase tracking-wider text-text-secondary">{session.status}</span>
+        <span class="text-bg-line">·</span>
+        <span class="text-text-muted truncate">{session.model || '—'}</span>
+        <span class="text-bg-line">·</span>
+        <span class="text-text-muted">{compact_number( session.tokens_in + session.tokens_out )} tok</span>
+        <span class="text-bg-line">·</span>
+        <span class="text-text-muted">{relative_time( session.started_at )}</span>
       </div>
-      <button onclick={kill} class="text-red-500/70 hover:text-red-500 p-1.5 rounded-md hover:bg-red-500/10" title="Stop">
-        <Square size={16} strokeWidth={2} fill="currentColor" />
+      <button onclick={kill} class="text-red-500/70 hover:text-red-500 p-1.5 rounded-md hover:bg-red-500/10" aria-label="Stop">
+        <Square size={14} strokeWidth={2} fill="currentColor" />
       </button>
     {:else}
       <div class="flex-1 text-sm text-text-secondary mono">…</div>
@@ -220,18 +190,14 @@
     <div bind:this={timeline_start}></div>
     {#if events.length > 50}
       <div class="px-4 py-2 mono text-[10px] text-text-muted uppercase tracking-wider flex items-center justify-between border-b border-bg-line/30">
-        <span>{events.length} eventos · mostrando historial completo</span>
+        <span>{events.length} eventos · historial completo</span>
         <button onclick={jump_to_top} class="text-accent flex items-center gap-1 hover:opacity-80">
           <ArrowUp size={10} strokeWidth={2.5} />
-          Ir al inicio
+          Inicio
         </button>
       </div>
     {/if}
-    <div class="py-2 divide-y divide-bg-line/30">
-      {#each events as ev ( ev.id )}
-        <EventBlock event={ev} summary={ev_summary( ev )} />
-      {/each}
-    </div>
+    <TerminalLog {events} cwd={session.cwd} />
     <div bind:this={timeline_end}></div>
   {/if}
 
