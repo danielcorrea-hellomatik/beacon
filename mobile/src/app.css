@@ -13,6 +13,10 @@ html, body, #app {
   overflow-x: hidden;
 }
 
+/* Safe area para Android nav bar / iOS home indicator */
+.safe-bottom { padding-bottom: max( env( safe-area-inset-bottom ), 16px ); }
+.safe-top    { padding-top:    max( env( safe-area-inset-top ),    12px ); }
+
 html {
   font-feature-settings: 'cv11', 'ss01';
 }

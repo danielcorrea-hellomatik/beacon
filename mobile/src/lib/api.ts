@@ -50,6 +50,7 @@ export const list_sessions   = ( d: Device, status?: string ) => get<Session[]>(
 export const get_session     = ( d: Device, id: string )      => get<Session>( d, `/api/sessions/${id}` );
 export const list_events     = ( d: Device, id: string, since: number = 0 ) => get<SessionEvent[]>( d, `/api/sessions/${id}/events?since=${since}` );
 export const send_prompt     = ( d: Device, id: string, prompt: string )    => post<{ ok: boolean; queue_id: number }>( d, `/api/sessions/${id}/send`, { prompt } );
+export const queue_status    = ( d: Device, id: string )                     => get<{ last: null | { id: number; prompt: string; queued_at: number; delivered_at: number | null; error: string } }>( d, `/api/sessions/${id}/queue-status` );
 export const kill_session    = ( d: Device, id: string )      => post<{ ok: boolean; error?: string }>( d, `/api/sessions/${id}/kill`, {} );
 export const get_stats       = ( d: Device )                  => get<{ local: DeviceStats; ccusage: unknown }>( d, `/api/stats` );
 export const get_daily_by_model = ( d: Device )               => get<DailyBreakdown>( d, `/api/stats/daily-by-model` );

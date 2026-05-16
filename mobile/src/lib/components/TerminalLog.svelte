@@ -74,7 +74,7 @@
   <div class="mono text-[12.5px] text-status-idle/80 mt-0.5">claude</div>
 </header>
 
-<section class="px-4 py-4 pb-44 mono text-[12.5px] leading-relaxed space-y-2.5">
+<section class="px-4 py-4 pb-56 mono text-[12.5px] leading-relaxed space-y-2.5">
   {#each events as ev ( ev.id )}
     {#if ev.type === 'UserPromptSubmit'}
       {@const prompt = ev_summary( ev )}

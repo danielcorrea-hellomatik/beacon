@@ -13,8 +13,19 @@ import {
   set_config,
   create_approval,
   respond_approval,
-  get_pending_approval
+  get_pending_approval,
+  db
 } from './db.ts';
+
+// Query helper local — última entrada de queued_prompts por sesión
+const db_query_last_queued = ( session_id: string ) => {
+  return db.prepare( `
+    select id, prompt, queued_at, delivered_at, error
+    from queued_prompts
+    where session_id = ?
+    order by id desc limit 1
+  ` ).get( session_id );
+};
 import {
   compute_global_stats,
   compute_global_stats_instant,
@@ -170,13 +181,23 @@ app.post( '/api/sessions/:id/send', async ( c ) => {
 
   const queue_id = queue_prompt( session_id, prompt );
 
-  // Si la sesión ya está idle, intentamos dispararlo inmediatamente en background
-  if( session.status === 'idle' )
-  {
-    flush_queue( session_id ).catch( () => {} );
-  }
+  // Disparamos flush en background SIEMPRE. Si la sesión está 'working',
+  // claude --resume reanudará la sesión cuando termine el turno actual.
+  // Si la sesión no es resumible (ej. discovery-only de un JSONL viejo),
+  // el error queda en queued_prompts.error para feedback de la UI.
+  flush_queue( session_id ).catch( ( err ) => {
+    console.warn( `[beacon] flush_queue failed for ${ session_id }:`, ( err as Error ).message );
+  } );
 
   return c.json( { ok: true, queue_id, session_status: session.status } );
+} );
+
+// Permite a la UI verificar si el último prompt encolado ya se entregó o falló
+app.get( '/api/sessions/:id/queue-status', ( c ) => {
+  const session_id = c.req.param( 'id' );
+  // Usamos el db directamente para mantener este endpoint en server.ts
+  const last = ( db_query_last_queued as ( s: string ) => unknown )( session_id );
+  return c.json( { last } );
 } );
 
 app.post( '/api/sessions/:id/kill', ( c ) => {

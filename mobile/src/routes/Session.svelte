@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from 'svelte';
   import { devices } from '../lib/stores.ts';
-  import { get_session, list_events, send_prompt, kill_session, open_stream } from '../lib/api.ts';
+  import { get_session, list_events, send_prompt, kill_session, open_stream, queue_status } from '../lib/api.ts';
   import { start_poll } from '../lib/poller.ts';
   import { relative_time, compact_number, short_path } from '../lib/format.ts';
   import { create_voice } from '../lib/voice.ts';
@@ -28,7 +28,8 @@
   let timeline_end   = $state<HTMLDivElement | undefined>( undefined );
   let timeline_start = $state<HTMLDivElement | undefined>( undefined );
   let first_render_done = $state( false );
-  let stuck_to_bottom   = $state( true );    // si el usuario no scrolleó arriba, auto-stick al final
+  let stuck_to_bottom   = $state( true );
+  let toast = $state<{ kind: 'ok' | 'err'; msg: string } | null>( null );
 
   function on_user_scroll() {
     const dist = document.body.scrollHeight - window.innerHeight - window.scrollY;
@@ -106,14 +107,38 @@
   function jump_to_top()    { timeline_start?.scrollIntoView( { behavior: 'smooth', block: 'start' } ); }
   function jump_to_bottom() { timeline_end?.scrollIntoView( { behavior: 'smooth', block: 'end' } ); stuck_to_bottom = true; }
 
+  function show_toast( kind: 'ok' | 'err', msg: string ) {
+    toast = { kind, msg };
+    setTimeout( () => { toast = null; }, 4_000 );
+  }
+
   async function send( text?: string ) {
     const msg = ( text ?? input ).trim();
     if( !msg || sending || !device ) return;
     if( !( await require_biometric( 'Enviar mensaje a Claude' ) ) ) return;
     sending = true;
-    try { await send_prompt( device, params.id, msg ); }
-    catch ( e ) { console.warn( e ); }
-    input = '';
+    try
+    {
+      await send_prompt( device, params.id, msg );
+      input = '';
+      show_toast( 'ok', 'Encolado · Claude lo procesa al terminar el turno' );
+
+      // Tras 3s, verificar si claude --resume falló (sesión no resumible)
+      setTimeout( async () => {
+        if( !device ) return;
+        try
+        {
+          const q = await queue_status( device, params.id );
+          if( q.last?.delivered_at && q.last?.error )
+            show_toast( 'err', q.last.error.slice( 0, 100 ) );
+        }
+        catch {}
+      }, 3_000 );
+    }
+    catch ( e )
+    {
+      show_toast( 'err', ( e as Error ).message );
+    }
     sending = false;
     refresh();
   }
@@ -242,7 +267,15 @@
   </button>
 {/if}
 
-<footer class="fixed bottom-0 inset-x-0 bg-bg-base border-t border-bg-line px-3 py-2.5 pb-6">
+{#if toast}
+  <div
+    class="fixed bottom-24 inset-x-3 z-30 rounded-lg px-3 py-2 text-[12px] mono border {toast.kind === 'ok' ? 'bg-status-idle/10 border-status-idle/40 text-status-idle' : 'bg-red-500/10 border-red-500/40 text-red-400'}"
+  >
+    {toast.msg}
+  </div>
+{/if}
+
+<footer class="fixed bottom-0 inset-x-0 bg-bg-base border-t border-bg-line px-3 pt-2.5 safe-bottom">
   <div class="flex gap-1.5 items-end">
     <button
       onclick={toggle_voice}
